@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giao Thừa 2026 - Năm Ngựa Rực Rỡ</title>
+
+  <style>
+    body{
+      margin:0;
+      overflow:hidden;
+      background:radial-gradient(circle,#000814,#001d3d,#000);
+      font-family:Arial;
+      text-align:center;
+      color:white;
+    }
+
+    #countdown{
+      position:absolute;
+      top:30%;
+      width:100%;
+      font-size:160px;
+      font-weight:bold;
+    }
+
+    #year{
+      font-size:120px;
+      margin-top:60px;
+      background:linear-gradient(45deg,#ff0,#ff4d00,#ff0);
+      -webkit-background-clip:text;
+      color:transparent;
+    }
+
+    #message{
+      margin-top:30px;
+      font-size:28px;
+      height:40px;
+    }
+
+    button{
+      position:absolute;
+      top:55%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      padding:20px 40px;
+      font-size:22px;
+      background:gold;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+    }
+
+    canvas{
+      position:fixed;
+      top:0;
+      left:0;
+      z-index:-1;
+    }
+
+    .horse{
+      position:fixed;
+      bottom:20px;
+      font-size:60px;
+      animation:run 6s linear infinite;
+    }
+
+    @keyframes run{
+      from{ left:-100px; }
+      to{ left:110%; }
+    }
+
+    .fall{
+      position:fixed;
+      top:-50px;
+      font-size:26px;
+      animation:fall linear forwards;
+    }
+
+    @keyframes fall{
+      to{
+        transform:translateY(110vh) rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="countdown"></div>
+<button id="startBtn">🎆 BẮT ĐẦU 🎆</button>
+<div id="year"></div>
+<div id="message"></div>
+
+<canvas id="canvas"></canvas>
+
+<audio id="bgm" src="tet.mp3" loop></audio>
+
+<script>
+
+  const btn = document.getElementById("startBtn");
+  const countdownEl = document.getElementById("countdown");
+  const year = document.getElementById("year");
+  const messageEl = document.getElementById("message");
+  const bgm = document.getElementById("bgm");
+
+  let audioCtx, analyser, dataArray;
+  let particles=[];
+  let lastBeat=0;
+
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  /* ===== LỜI CHÚC NĂM NGỰA ===== */
+
+  const messages = [
+    "🐎 Chúc Năm Ngựa phi nước đại thành công!",
+    "🔥 Mã đáo thành công - Bứt phá mạnh mẽ!",
+    "💰 Tài lộc phi nhanh như vó ngựa!",
+    "🌟 Sự nghiệp thăng hoa rực rỡ!",
+    "❤️ Gia đình hạnh phúc an khang!",
+    "🚀 Bứt tốc ngoạn mục trong mọi mục tiêu!",
+    "🧧 Lì xì đầy tay - Vận may đầy năm!",
+    "🌸 Xuân 2026 tràn ngập yêu thương!",
+    "💎 Năm mới sung sức như tuấn mã!",
+    "🎉 Vạn sự hanh thông - Mã đáo thành công!"
+  ];
+
+  function rotateMessages(){
+    let i=0;
+    setInterval(()=>{
+      messageEl.innerHTML=messages[i];
+      i++;
+      if(i>=messages.length) i=0;
+    },3000);
+  }
+
+  /* ===== START ===== */
+
+  btn.onclick = ()=>{
+    btn.style.display="none";
+    startCountdown();
+  };
+
+  /* ===== COUNTDOWN ===== */
+
+  function startCountdown(){
+    let count=10;
+    countdownEl.innerHTML=count;
+
+    const interval=setInterval(()=>{
+      count--;
+      if(count>0){
+        countdownEl.innerHTML=count;
+      }else{
+        clearInterval(interval);
+        countdownEl.innerHTML="🎉";
+        setTimeout(()=>{
+          countdownEl.innerHTML="";
+          startShow();
+        },800);
+      }
+    },1000);
+  }
+
+  /* ===== SHOW ===== */
+
+  async function startShow(){
+
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    await audioCtx.resume();
+
+    const source = audioCtx.createMediaElementSource(bgm);
+    analyser = audioCtx.createAnalyser();
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    analyser.fftSize = 256;
+
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    bgm.volume=0.9;
+    bgm.play();
+
+    year.innerHTML="2026 🐎";
+
+    rotateMessages();
+    createHorse();
+    setInterval(createFalling,300);
+    setTimeout(()=>createTextFirework(),800);
+
+    animate();
+  }
+
+  /* ===== NGỰA ===== */
+
+  function createHorse(){
+    const horse=document.createElement("div");
+    horse.className="horse";
+    horse.innerHTML="🐎";
+    document.body.appendChild(horse);
+  }
+
+  /* ===== FIREWORK ===== */
+
+  function createFirework(x,y,power=1){
+    for(let i=0;i<120*power;i++){
+      particles.push({
+        x:x,
+        y:y,
+        angle:Math.random()*2*Math.PI,
+        speed:Math.random()*6+2,
+        life:100
+      });
+    }
+  }
+
+  function createHeart(){
+    let centerX = canvas.width/2;
+    let centerY = canvas.height/3;
+
+    for(let t=0;t<Math.PI*2;t+=0.05){
+      let x = 16*Math.pow(Math.sin(t),3);
+      let y = -(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
+      particles.push({
+        x:centerX,
+        y:centerY,
+        targetX:centerX+x*12,
+        targetY:centerY+y*12,
+        life:100
+      });
+    }
+  }
+
+  function createTextFirework(){
+    ctx.font="140px Arial";
+    ctx.fillStyle="white";
+    ctx.fillText("2026",canvas.width/2-170,canvas.height/3);
+
+    const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+
+    for(let y=0;y<canvas.height;y+=6){
+      for(let x=0;x<canvas.width;x+=6){
+        const index=(y*canvas.width+x)*4;
+        if(imgData.data[index+3]>128){
+          particles.push({
+            x:canvas.width/2,
+            y:canvas.height/3,
+            targetX:x,
+            targetY:y,
+            life:100
+          });
+        }
+      }
+    }
+  }
+
+  function draw(){
+    ctx.fillStyle="rgba(0,0,0,0.25)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    particles.forEach((p,i)=>{
+
+      if(p.targetX){
+        p.x+=(p.targetX-p.x)*0.1;
+        p.y+=(p.targetY-p.y)*0.1;
+      }else{
+        p.x+=Math.cos(p.angle)*p.speed;
+        p.y+=Math.sin(p.angle)*p.speed;
+      }
+
+      p.life--;
+
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,2.5,0,Math.PI*2);
+      ctx.fillStyle=`hsl(${Math.random()*360},100%,60%)`;
+      ctx.fill();
+
+      if(p.life<=0) particles.splice(i,1);
+    });
+  }
+
+  function animate(){
+
+    analyser.getByteFrequencyData(dataArray);
+
+    let bass=0;
+    for(let i=0;i<15;i++){
+      bass+=dataArray[i];
+    }
+    bass/=15;
+
+    let now=Date.now();
+
+    if(bass>180 && now-lastBeat>400){
+      createHeart();
+      createFirework(Math.random()*canvas.width,Math.random()*canvas.height/2,2);
+      lastBeat=now;
+    }
+    else if(bass>140 && now-lastBeat>300){
+      createFirework(Math.random()*canvas.width,Math.random()*canvas.height/2,1);
+      lastBeat=now;
+    }
+
+    draw();
+    requestAnimationFrame(animate);
+  }
+
+  /* ===== HOA + LÌ XÌ ===== */
+
+  function createFalling(){
+    const items=["🌸","🌸","🌸","🧧"];
+    const el=document.createElement("div");
+    el.className="fall";
+    el.innerText=items[Math.floor(Math.random()*items.length)];
+    el.style.left=Math.random()*100+"vw";
+    el.style.animationDuration=(Math.random()*4+4)+"s";
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),8000);
+  }
+
+</script>
+</body>
+</html>
